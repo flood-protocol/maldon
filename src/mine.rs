@@ -35,7 +35,6 @@ pub struct Create2Miner {
 impl Create2Miner {
     /// The maximum value of the nonce segment of the salt. Since this is 6 bytes, we shift the u64 max by 2 bytes.
     const MAX_INCREMENTING_NONCE: u64 = u64::MAX >> 2;
-
     /// Creates a new CREATE2 miner.
     ///
     /// # Arguments
@@ -85,6 +84,64 @@ impl Miner for Create2Miner {
                         )
                     })
                 });
+
+            // Exists the loop.
+            if let Some(found) = maybe_found {
+                break (found);
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Create3Miner {
+    factory: Address,
+    deployer: Address,
+}
+
+impl Create3Miner {
+    const PROXY_INIT_CODE_HASH: [u8; 32] = [
+        0x21, 0xc3, 0x5d, 0xbe, 0x1b, 0x34, 0x4a, 0x24, 0x88, 0xcf, 0x33, 0x21, 0xd6, 0xce, 0x54,
+        0x2f, 0x8e, 0x9f, 0x30, 0x55, 0x44, 0xff, 0x09, 0xe4, 0x99, 0x3a, 0x62, 0x31, 0x9a, 0x49,
+        0x7c, 0x1f,
+    ];
+    pub fn new(factory: Address, deployer: Address) -> Self {
+        Self { factory, deployer }
+    }
+}
+
+impl Miner for Create3Miner {
+    fn mine(&self, pattern: &[u8]) -> (Address, FixedBytes<32>) {
+        let mut rng = thread_rng();
+
+        let mut salt = [0u8; 32];
+
+        let mut salt_buffer = [0u8; 52];
+        salt_buffer[0..20].copy_from_slice(self.deployer.as_slice());
+
+        let mut proxy_create_buffer = [0u8; 23];
+        proxy_create_buffer[0..2].copy_from_slice(&[0xd6, 0x94]);
+        proxy_create_buffer[22] = 0x01;
+
+        loop {
+            rng.fill(&mut salt[16..]);
+
+            let maybe_found = (0..u128::MAX).into_par_iter().find_map_any(move |nonce| {
+                let mut salt = salt;
+                salt[0..16].copy_from_slice(&nonce.to_be_bytes());
+                let mut salt_buffer = salt_buffer;
+                salt_buffer[20..].copy_from_slice(salt.as_slice());
+                let mut proxy_create_buffer = proxy_create_buffer;
+                let proxy = self
+                    .factory
+                    .create2(keccak256(salt_buffer), Self::PROXY_INIT_CODE_HASH);
+                proxy_create_buffer[2..22].copy_from_slice(proxy.as_slice());
+                let hash = keccak256(proxy_create_buffer);
+
+                hash[12..]
+                    .starts_with(pattern)
+                    .then(|| (Address::from_slice(&hash[12..32]), salt.into()))
+            });
 
             // Exists the loop.
             if let Some(found) = maybe_found {
