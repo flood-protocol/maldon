@@ -74,10 +74,23 @@ pub struct Config {
     /// Address of the CREATE2 Factory contract.
     pub factory: Address,
     /// Address of the contract deployer.
-    pub caller: Address,
+    pub deployer: Address,
     /// Hash of the initialization code.
     pub init_code_hash: FixedBytes<32>,
     #[clap(short, long)]
     /// Pattern to search for. Must be hex digits only and between 1 and 20 characters.
     pub pattern: Pattern,
+}
+
+#[test]
+fn test_pattern_bytes_from_str() -> Result<(), PatternError> {
+    let pattern_bytes = "f100d0".parse::<Pattern>().and_then(|pattern| {
+        pattern
+            .into_bytes()
+            .map_err(|_| PatternError::NonHexPattern)
+    })?;
+
+    assert_eq!(&[241, 0, 208], pattern_bytes.as_slice());
+
+    Ok(())
 }
