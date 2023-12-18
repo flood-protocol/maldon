@@ -1,18 +1,18 @@
 # Maldon 🧂⛏️
 
-Maldon is a CLI for quickly finding salts that create pattern matching Ethereum addresses via CREATE2.
+Maldon is a CLI for quickly finding salts that create pattern matching Ethereum addresses via CREATE2 or CREATE3.
 Written in Rust with [Alloy](https://github.com/alloy-rs/core).
 
-Maldon is heavely inspired by [Create2Crunch](https://github.com/0age/create2crunch), with the difference that it supports arbitrary patterns and will exit once it finds a salt.
-Create2Crunch is still the better choice if you need GPU support or don't have a predermined pattern in mind.
+Maldon is heavely inspired by [Create2Crunch](https://github.com/0age/create2crunch), with the difference that it supports arbitrary patterns, will exit once it finds a salt and with additional CREATE3 support.
+Create2Crunch is still the better choice if you need GPU support, don't have a predermined pattern in mind or don't care about CREATE3.
 
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/maldon.git
+git clone https://github.com/flood-protocol/maldon.git
 cd maldon
 # Run it directly
-cargo run --release -- <FACTORY> <CALLER> <INIT_CODE_HASH> <PATTERN>
+cargo run --release -- create2 --factory <FACTORY> <CALLER> <INIT_CODE_HASH> <PATTERN>
 
 # Add it to your path
 cargo install --path .
