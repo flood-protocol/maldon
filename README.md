@@ -21,14 +21,31 @@ cargo install --path .
 ## Usage
 
 ```
-Usage: maldon --pattern <PATTERN> <FACTORY> <CALLER> <INIT_CODE_HASH>
+Usage: maldon <COMMAND>
+
+Commands:
+  create2  Mines a CREATE2 salt
+  create3  Mines a CREATE3 salt
+  help     Print this message or the help of the given subcommand(s)
+
+Usage: maldon create2 [OPTIONS] <DEPLOYER> <INIT_CODE_HASH> <PATTERN>
 
 Arguments:
-  <FACTORY>         Address of the CREATE2 Factory contract
-  <CALLER>          Address of the contract deployer
+  <DEPLOYER>        Address of the contract deployer
   <INIT_CODE_HASH>  Hash of the initialization code
+  <PATTERN>         Pattern to search for. Must be hex digits only and between 1 and 20 characters
 
 Options:
-  -p, --pattern <PATTERN>  Pattern to search for. Must be hex digits only and between 1 and 20 characters
+  -f, --factory <FACTORY>  Address of the Factory contract. Defaults to the Immutable CREATE2 Factory by 0age
+  -h, --help               Print help
+
+Usage: maldon create3 [OPTIONS] <DEPLOYER> <PATTERN>
+
+Arguments:
+  <DEPLOYER>  Address of the contract deployer
+  <PATTERN>   Pattern to search for. Must be hex digits only and between 1 and 20 characters
+
+Options:
+  -f, --factory <FACTORY>  Address of the Factory contract. Defaults to the Aori Factory
   -h, --help               Print help
 ```

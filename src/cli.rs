@@ -70,21 +70,31 @@ impl FromStr for Pattern {
 }
 
 #[derive(Parser, Debug, Clone)]
-pub struct Config {
-    /// Flag to enable CREATE3 mining.
-    #[clap(short, long, default_value = "false")]
-    pub create3: bool,
-    /// Address of the Factory contract. Defaults to the Immutable CREATE2 Factory by 0age for CREATE2 and the Aori Factory for CREATE3.
-    pub factory: Option<Address>,
-    /// Address of the contract deployer.
-    #[clap(short, long)]
-    pub deployer: Address,
-    /// Hash of the initialization code. Only needed for CREATE2.
-    #[clap(required_unless_present = "create3")]
-    pub init_code_hash: Option<FixedBytes<32>>,
-    #[clap(short, long)]
-    /// Pattern to search for. Must be hex digits only and between 1 and 20 characters.
-    pub pattern: Pattern,
+#[command(name = "maldon")]
+#[command(about = "Maldon is a fast CREATE2 and CREATE3 salt miner.")]
+pub enum Maldon {
+    /// Mines a CREATE2 salt.
+    Create2 {
+        /// Address of the contract deployer.
+        deployer: Address,
+        /// Address of the Factory contract. Defaults to the Immutable CREATE2 Factory by 0age.
+        #[clap(short, long)]
+        factory: Option<Address>,
+        /// Hash of the initialization code.
+        init_code_hash: FixedBytes<32>,
+        /// Pattern to search for. Must be hex digits only and between 1 and 20 characters.
+        pattern: Pattern,
+    },
+    /// Mines a CREATE3 salt.
+    Create3 {
+        /// Address of the contract deployer.
+        deployer: Address,
+        /// Address of the Factory contract. Defaults to the Aori Factory.
+        #[clap(short, long)]
+        factory: Option<Address>,
+        /// Pattern to search for. Must be hex digits only and between 1 and 20 characters.
+        pattern: Pattern,
+    },
 }
 
 #[test]

@@ -3,7 +3,7 @@ mod mine;
 
 use clap::Parser;
 
-use cli::Config;
+use cli::Maldon;
 
 use mine::{Create2Miner, Create3Miner, Miner};
 
@@ -18,32 +18,36 @@ const CREATE3_DEFAULT_FACTORY: [u8; 20] = [
 ];
 
 fn main() {
-    let config = Config::parse();
-    let pattern = config.pattern.into_bytes().expect("pattern is valid");
-
-    let (address, salt) = if config.create3 {
-        let factory = if let Some(factory) = config.factory {
-            factory
-        } else {
-            CREATE3_DEFAULT_FACTORY.into()
-        };
-
-        Create3Miner::new(factory, config.deployer).mine(&pattern)
-    } else {
-        let factory = if let Some(factory) = config.factory {
-            factory
-        } else {
-            CREATE2_DEFAULT_FACTORY.into()
-        };
-
-        Create2Miner::new(
+    let (address, salt) = match Maldon::parse() {
+        Maldon::Create2 {
+            deployer,
             factory,
-            config.deployer,
-            config
-                .init_code_hash
-                .expect("init code hash must be present for CREATE2."),
-        )
-        .mine(&pattern)
+            init_code_hash,
+            pattern,
+        } => {
+            let factory = if let Some(factory) = factory {
+                factory
+            } else {
+                CREATE2_DEFAULT_FACTORY.into()
+            };
+
+            Create2Miner::new(factory, deployer, init_code_hash)
+                .mine(&pattern.into_bytes().expect("pattern is valid"))
+        }
+        Maldon::Create3 {
+            deployer,
+            factory,
+            pattern,
+        } => {
+            let factory = if let Some(factory) = factory {
+                factory
+            } else {
+                CREATE3_DEFAULT_FACTORY.into()
+            };
+
+            Create3Miner::new(factory, deployer)
+                .mine(&pattern.into_bytes().expect("pattern is valid"))
+        }
     };
 
     println!("Found salt {salt:?} ==> {address:?}");
