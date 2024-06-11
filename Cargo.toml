@@ -1,11 +1,12 @@
 [package]
     edition="2021"
     name   ="maldon"
-    version="0.2.0"
+    version="0.2.1"
 
 [dependencies]
-    alloy-primitives="0.2.0"
-    clap            ={version="4.3.11", features=["derive"]}
-    hex             ="0.4.3"
-    rand            ="0.8.5"
-    rayon           ="1.7.0"
+    alloy-primitives="0.7"
+    clap            ={version="4.5", features=["derive"]}
+    hex             ="0.4"
+    rand            ="0.8"
+    rayon           ="1.10"
+    thiserror       ="1"

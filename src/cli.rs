@@ -1,12 +1,18 @@
-use std::{error, fmt, ops::Deref, str::FromStr};
-
-use clap::Parser;
+use std::{ops::Deref, str::FromStr};
 
 use alloy_primitives::{Address, FixedBytes};
 
 /// Pattern.
-#[derive(Debug, Clone)]
-pub struct Pattern(Box<str>);
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(super) struct Pattern(Box<str>);
+
+impl Deref for Pattern {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 impl Pattern {
     /// Returns the byte representation of the pattern. Pads the pattern with 0s if it is uneven.
@@ -14,7 +20,7 @@ impl Pattern {
     /// # Errors
     ///
     /// Returns errors if the conversion fails.
-    pub(crate) fn into_bytes(self) -> Result<Vec<u8>, hex::FromHexError> {
+    pub(super) fn into_bytes(self) -> Result<Vec<u8>, hex::FromHexError> {
         let mut string = self.to_string();
 
         if self.len() % 2 != 0 {
@@ -25,33 +31,14 @@ impl Pattern {
     }
 }
 
-impl Deref for Pattern {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 /// Pattern errors.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PatternError {
-    /// The pattern's length exceeds 39 characters or the pattern is empty.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
+pub(super) enum PatternError {
+    #[error("the pattern's length exceeds 39 characters or the pattern is empty")]
     InvalidPatternLength,
-    /// The patters is not in hexadecimal format.
+    #[error("the patters is not in hexadecimal format")]
     NonHexPattern,
 }
-
-impl fmt::Display for PatternError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PatternError::InvalidPatternLength => write!(f, "invalid length"),
-            PatternError::NonHexPattern => write!(f, "pattern must be hex digits only"),
-        }
-    }
-}
-
-impl error::Error for PatternError {}
 
 impl FromStr for Pattern {
     type Err = PatternError;
@@ -69,10 +56,12 @@ impl FromStr for Pattern {
     }
 }
 
-#[derive(Parser, Debug, Clone)]
-#[command(name = "maldon")]
-#[command(about = "Maldon is a fast CREATE2 and CREATE3 salt miner.")]
-pub enum Maldon {
+#[derive(Clone, Debug, clap::Parser)]
+#[command(
+    name = "maldon",
+    about = "Maldon is a fast CREATE2 and CREATE3 salt miner."
+)]
+pub(super) enum Maldon {
     /// Mines a CREATE2 salt.
     Create2 {
         /// Address of the contract deployer.

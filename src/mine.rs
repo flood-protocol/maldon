@@ -4,7 +4,7 @@ use rand::{thread_rng, Rng};
 
 use alloy_primitives::{keccak256, Address, FixedBytes};
 
-pub trait Miner {
+pub(super) trait Miner {
     /// Runs the Miner.
     fn mine(&self, pattern: &[u8]) -> (Address, FixedBytes<32>);
 }
@@ -26,7 +26,7 @@ pub trait Miner {
 /// with the resultant address and the "value" (i.e. approximate rarity) of the
 /// resultant address.
 #[derive(Debug, Clone, Copy)]
-pub struct Create2Miner {
+pub(super) struct Create2Miner {
     factory: Address,
     deployer: Address,
     init_code_hash: FixedBytes<32>,
@@ -39,12 +39,12 @@ impl Create2Miner {
     ///
     /// # Arguments
     ///
-    /// `factory` - CREATE2 factory address.
+    /// * `factory` - CREATE2 factory address.
     ///
-    /// `deployer` - Deployer address.
+    /// * `deployer` - Deployer address.
     ///
-    /// `init_code_hash` - Keccak-256 hash of the contract initialization code.
-    pub fn new(factory: Address, deployer: Address, init_code_hash: FixedBytes<32>) -> Self {
+    /// * `init_code_hash` - Keccak-256 hash of the contract initialization code.
+    pub(super) fn new(factory: Address, deployer: Address, init_code_hash: FixedBytes<32>) -> Self {
         Self {
             factory,
             deployer,
@@ -56,6 +56,7 @@ impl Create2Miner {
 impl Miner for Create2Miner {
     fn mine(&self, pattern: &[u8]) -> (Address, FixedBytes<32>) {
         let mut rng = thread_rng();
+
         let mut hash_buffer = [0u8; 85];
         hash_buffer[0] = 0xff;
         // header: 0xff + factory + deployer + salt_random_segment + nonce_segment + init_code_hash
@@ -72,10 +73,12 @@ impl Miner for Create2Miner {
                 .into_par_iter()
                 .find_map_any(move |salt_incremented_nonce| {
                     let mut to_hash = hash_buffer;
+
                     // bytes 47..53 are the nonce_segment
                     to_hash[47..53].copy_from_slice(&salt_incremented_nonce.to_be_bytes()[2..]);
 
                     let hash = keccak256(to_hash);
+
                     // check wether we have a match
                     hash[12..].starts_with(pattern).then(|| {
                         (
@@ -94,7 +97,7 @@ impl Miner for Create2Miner {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Create3Miner {
+pub(super) struct Create3Miner {
     factory: Address,
     deployer: Address,
 }

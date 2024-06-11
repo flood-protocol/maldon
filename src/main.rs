@@ -3,21 +3,18 @@ mod mine;
 
 use clap::Parser;
 
-use cli::Maldon;
+use alloy_primitives::{address, Address};
 
-use mine::{Create2Miner, Create3Miner, Miner};
+use {
+    cli::Maldon,
+    mine::{Create2Miner, Create3Miner, Miner},
+};
 
-const CREATE2_DEFAULT_FACTORY: [u8; 20] = [
-    0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xe8, 0xB4, 0x7B, 0x3e, 0x21, 0x30, 0x21, 0x3B, 0x80, 0x22,
-    0x12, 0x43, 0x94, 0x97,
-];
+const CREATE2_DEFAULT_FACTORY: Address = address!("0000000000ffe8b47b3e2130213b802212439497");
 
-const CREATE3_DEFAULT_FACTORY: [u8; 20] = [
-    0x2D, 0xfc, 0xc7, 0x41, 0x5D, 0x89, 0xaf, 0x82, 0x8c, 0xbe, 0xf0, 0x05, 0xF0, 0xd0, 0x72, 0xD8,
-    0xb3, 0xF2, 0x31, 0x83,
-];
+const CREATE3_DEFAULT_FACTORY: Address = address!("2dfcc7415d89af828cbef005f0d072d8b3f23183");
 
-fn main() {
+fn main() -> Result<(), hex::FromHexError> {
     let (address, salt) = match Maldon::parse() {
         Maldon::Create2 {
             deployer,
@@ -25,30 +22,22 @@ fn main() {
             init_code_hash,
             pattern,
         } => {
-            let factory = if let Some(factory) = factory {
-                factory
-            } else {
-                CREATE2_DEFAULT_FACTORY.into()
-            };
+            let factory = factory.unwrap_or(CREATE2_DEFAULT_FACTORY);
 
-            Create2Miner::new(factory, deployer, init_code_hash)
-                .mine(&pattern.into_bytes().expect("pattern is valid"))
+            Create2Miner::new(factory, deployer, init_code_hash).mine(&pattern.into_bytes()?)
         }
         Maldon::Create3 {
             deployer,
             factory,
             pattern,
         } => {
-            let factory = if let Some(factory) = factory {
-                factory
-            } else {
-                CREATE3_DEFAULT_FACTORY.into()
-            };
+            let factory = factory.unwrap_or(CREATE3_DEFAULT_FACTORY);
 
-            Create3Miner::new(factory, deployer)
-                .mine(&pattern.into_bytes().expect("pattern is valid"))
+            Create3Miner::new(factory, deployer).mine(&pattern.into_bytes()?)
         }
     };
 
     println!("Found salt {salt:?} ==> {address:?}");
+
+    Ok(())
 }
